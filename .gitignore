@@ -16,5 +16,9 @@
 
 # DUB
 .dub
+dub.selections.*
+LICENSE
 docs.json
 __dummy.html
+mondo
+.vscode

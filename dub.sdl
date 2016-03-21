@@ -1,0 +1,5 @@
+name "mondo"
+description "MongoDB library for D"
+copyright "Copyright © 2016, 2night.it"
+authors "Andrea Fontana"
+libs "mongoc-1.0"

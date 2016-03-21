@@ -77,7 +77,7 @@ class WriteConcern
    private mongoc_write_concern_t *_writeConcern;
 }
 
-/+ Waiting for support on c driver?
+
 /// MongoDB ReadConcern params for query. Check mongo documentation.
 class ReadConcern
 {
@@ -87,11 +87,11 @@ class ReadConcern
    ~this() { mongoc_read_concern_destroy(_readConcern); }
 
    @property level() { return to!string(mongoc_read_concern_get_level(_readConcern)); }
-   @property level(in string level) { mongoc_read_concern_set_level(_readConcern, level.toStringZ); }
+   @property level(in string level) { mongoc_read_concern_set_level(_readConcern, level.toStringz); }
    
-   private mongoc_write_concern_t *_readConcern;
+   private mongoc_read_concern_t *_readConcern;
 }
-+/
+
 
 /// MongoDB Read Preferences params for query. Check mongo documentation.
 class ReadPrefs
@@ -372,6 +372,10 @@ class Mongo
    @property WriteConcern writeConcern() { return new WriteConcern(mongoc_client_get_write_concern(_client)); }  
    @property void writeConcern(WriteConcern wc) { mongoc_client_set_write_concern(_client, wc._writeConcern); } /// ditto
 
+   /// Global readConcern settings.
+   @property ReadConcern readConcern() { return new ReadConcern(mongoc_client_get_read_concern(_client)); }  
+   @property void readConcern(ReadConcern rc) { mongoc_client_set_read_concern(_client, rc._readConcern); } /// ditto
+
    /// Global readPrefs settings.
    @property ReadPrefs readPrefs() { return new ReadPrefs(mongoc_client_get_read_prefs(_client)); }  
    @property void readPrefs(ReadPrefs rp) { mongoc_client_set_read_prefs(_client, rp._readPrefs); } /// ditto
@@ -523,6 +527,9 @@ class Db
 
    @property WriteConcern writeConcern() { return new WriteConcern(mongoc_database_get_write_concern(_db)); }  
    @property void writeConcern(WriteConcern wc) { mongoc_database_set_write_concern(_db, wc._writeConcern); }
+   
+   @property ReadConcern readConcern() { return new ReadConcern(mongoc_database_get_read_concern(_db)); }  
+   @property void readConcern(ReadConcern rc) { mongoc_database_set_read_concern(_db, rc._readConcern); } /// ditto
    
    @property ReadPrefs readPrefs() { return new ReadPrefs(mongoc_database_get_read_prefs(_db)); }  
    @property void readPrefs(ReadPrefs rp) { mongoc_database_set_read_prefs(_db, rp._readPrefs); }
@@ -744,6 +751,9 @@ class Collection
 
    @property WriteConcern writeConcern() { return new WriteConcern(mongoc_collection_get_write_concern(_collection)); }  
    @property void writeConcern(WriteConcern wc) { mongoc_collection_set_write_concern(_collection, wc._writeConcern); }
+     
+   @property ReadConcern readConcern() { return new ReadConcern(mongoc_collection_get_read_concern(_collection)); }  
+   @property void readConcern(ReadConcern rc) { mongoc_collection_set_read_concern(_collection, rc._readConcern); } /// ditto
    
    @property ReadPrefs readPrefs() { return new ReadPrefs(mongoc_collection_get_read_prefs(_collection)); }  
    @property void readPrefs(ReadPrefs rp) { mongoc_collection_set_read_prefs(_collection, rp._readPrefs); }

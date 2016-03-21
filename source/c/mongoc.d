@@ -1,6 +1,6 @@
 // This file was auto-generated. Don't change it.
-// mongo-c-driver version: 1.2.4
-// libbson version: 1.2.4
+// mongo-c-driver version: 1.3.4
+// libbson version: 1.3.4
 extern (C): 
 
 // libbson stuffs --->
@@ -324,6 +324,10 @@ bool mongoc_gridfs_file_remove (mongoc_gridfs_file_t* file, bson_error_t* error)
 // from file mongoc-bulk-operation.h:
 
 alias _mongoc_bulk_operation_t mongoc_bulk_operation_t;
+alias _mongoc_bulk_write_flags_t mongoc_bulk_write_flags_t;
+
+struct _mongoc_bulk_write_flags_t;
+
 
 struct _mongoc_bulk_operation_t;
 
@@ -338,6 +342,7 @@ void mongoc_bulk_operation_remove_one (mongoc_bulk_operation_t* bulk, const(bson
 void mongoc_bulk_operation_replace_one (mongoc_bulk_operation_t* bulk, const(bson_t)* selector, const(bson_t)* document, bool upsert);
 void mongoc_bulk_operation_update (mongoc_bulk_operation_t* bulk, const(bson_t)* selector, const(bson_t)* document, bool upsert);
 void mongoc_bulk_operation_update_one (mongoc_bulk_operation_t* bulk, const(bson_t)* selector, const(bson_t)* document, bool upsert);
+void mongoc_bulk_operation_set_bypass_document_validation (mongoc_bulk_operation_t* bulk, bool bypass);
 mongoc_bulk_operation_t* mongoc_bulk_operation_new (bool ordered);
 void mongoc_bulk_operation_set_write_concern (mongoc_bulk_operation_t* bulk, const(mongoc_write_concern_t)* write_concern);
 void mongoc_bulk_operation_set_database (mongoc_bulk_operation_t* bulk, const(char)* database);
@@ -345,6 +350,19 @@ void mongoc_bulk_operation_set_collection (mongoc_bulk_operation_t* bulk, const(
 void mongoc_bulk_operation_set_client (mongoc_bulk_operation_t* bulk, void* client);
 void mongoc_bulk_operation_set_hint (mongoc_bulk_operation_t* bulk, uint hint);
 const(mongoc_write_concern_t)* mongoc_bulk_operation_get_write_concern (const(mongoc_bulk_operation_t)* bulk);
+
+// from file mongoc-read-concern.h:
+
+alias _mongoc_read_concern_t mongoc_read_concern_t;
+
+struct _mongoc_read_concern_t;
+
+
+mongoc_read_concern_t* mongoc_read_concern_new ();
+mongoc_read_concern_t* mongoc_read_concern_copy (const(mongoc_read_concern_t)* read_concern);
+void mongoc_read_concern_destroy (mongoc_read_concern_t* read_concern);
+const(char)* mongoc_read_concern_get_level (const(mongoc_read_concern_t)* read_concern);
+bool mongoc_read_concern_set_level (mongoc_read_concern_t* read_concern, const(char)* level);
 
 // from file mongoc-client-pool.h:
 
@@ -375,9 +393,6 @@ struct _mongoc_host_list_t
     int family;
     void*[4] padding;
 }
-
-bool mongoc_host_list_equal (const(mongoc_host_list_t)* host_a, const(mongoc_host_list_t)* host_b);
-void mongoc_host_list_destroy_all (mongoc_host_list_t* host);
 
 // from file mongoc-server-description.h:
 
@@ -482,6 +497,8 @@ void mongoc_cursor_set_batch_size (mongoc_cursor_t* cursor, uint batch_size);
 uint mongoc_cursor_get_batch_size (const(mongoc_cursor_t)* cursor);
 uint mongoc_cursor_get_hint (const(mongoc_cursor_t)* cursor);
 long mongoc_cursor_get_id (const(mongoc_cursor_t)* cursor);
+void mongoc_cursor_set_max_await_time_ms (mongoc_cursor_t* cursor, uint max_await_time_ms);
+uint mongoc_cursor_get_max_await_time_ms (const(mongoc_cursor_t)* cursor);
 
 // from file mongoc-config.h:
 
@@ -646,6 +663,7 @@ bool mongoc_uri_get_ssl (const(mongoc_uri_t)* uri);
 char* mongoc_uri_unescape (const(char)* escaped_string);
 const(mongoc_read_prefs_t)* mongoc_uri_get_read_prefs_t (const(mongoc_uri_t)* uri);
 const(mongoc_write_concern_t)* mongoc_uri_get_write_concern (const(mongoc_uri_t)* uri);
+const(mongoc_read_concern_t)* mongoc_uri_get_read_concern (const(mongoc_uri_t)* uri);
 
 // from file mongoc-database-patched.c:
 
@@ -663,6 +681,7 @@ bool mongoc_database_remove_user (mongoc_database_t* database, const(char)* user
 bool mongoc_database_remove_all_users (mongoc_database_t* database, bson_error_t* error);
 bool mongoc_database_add_user (mongoc_database_t* database, const(char)* username, const(char)* password, const(bson_t)* roles, const(bson_t)* custom_data, bson_error_t* error);
 void mongoc_database_destroy (mongoc_database_t* database);
+mongoc_database_t* mongoc_database_copy (mongoc_database_t* database);
 mongoc_cursor_t* mongoc_database_command (mongoc_database_t* database, mongoc_query_flags_t flags, uint skip, uint limit, uint batch_size, const(bson_t)* command, const(bson_t)* fields, const(mongoc_read_prefs_t)* read_prefs);
 bool mongoc_database_command_simple (mongoc_database_t* database, const(bson_t)* command, const(mongoc_read_prefs_t)* read_prefs, bson_t* reply, bson_error_t* error);
 bool mongoc_database_drop (mongoc_database_t* database, bson_error_t* error);
@@ -672,6 +691,8 @@ const(mongoc_read_prefs_t)* mongoc_database_get_read_prefs (const(mongoc_databas
 void mongoc_database_set_read_prefs (mongoc_database_t* database, const(mongoc_read_prefs_t)* read_prefs);
 const(mongoc_write_concern_t)* mongoc_database_get_write_concern (const(mongoc_database_t)* database);
 void mongoc_database_set_write_concern (mongoc_database_t* database, const(mongoc_write_concern_t)* write_concern);
+const(mongoc_read_concern_t)* mongoc_database_get_read_concern (const(mongoc_database_t)* database);
+void mongoc_database_set_read_concern (mongoc_database_t* database, const(mongoc_read_concern_t)* read_concern);
 mongoc_cursor_t* mongoc_database_find_collections (mongoc_database_t* database, const(bson_t)* filter, bson_error_t* error);
 char** mongoc_database_get_collection_names (mongoc_database_t* database, bson_error_t* error);
 mongoc_collection_t* mongoc_database_get_collection (mongoc_database_t* database, const(char)* name);
@@ -774,7 +795,8 @@ struct mongoc_index_opt_t
     const(char)* language_override;
     mongoc_index_opt_geo_t* geo_options;
     mongoc_index_opt_storage_t* storage_options;
-    void*[6] padding;
+    const(bson_t)* partial_filter_expression;
+    void*[5] padding;
 }
 
 const(mongoc_index_opt_t)* mongoc_index_opt_get_default ();
@@ -791,6 +813,7 @@ void mongoc_index_opt_wt_init (mongoc_index_opt_wt_t* opt);
 
 mongoc_cursor_t* mongoc_collection_aggregate (mongoc_collection_t* collection, mongoc_query_flags_t flags, const(bson_t)* pipeline, const(bson_t)* options, const(mongoc_read_prefs_t)* read_prefs);
 void mongoc_collection_destroy (mongoc_collection_t* collection);
+mongoc_collection_t* mongoc_collection_copy (mongoc_collection_t* collection);
 mongoc_cursor_t* mongoc_collection_command (mongoc_collection_t* collection, mongoc_query_flags_t flags, uint skip, uint limit, uint batch_size, const(bson_t)* command, const(bson_t)* fields, const(mongoc_read_prefs_t)* read_prefs);
 bool mongoc_collection_command_simple (mongoc_collection_t* collection, const(bson_t)* command, const(mongoc_read_prefs_t)* read_prefs, bson_t* reply, bson_error_t* error);
 long mongoc_collection_count (mongoc_collection_t* collection, mongoc_query_flags_t flags, const(bson_t)* query, long skip, long limit, const(mongoc_read_prefs_t)* read_prefs, bson_error_t* error);
@@ -808,11 +831,14 @@ bool mongoc_collection_delete (mongoc_collection_t* collection, mongoc_delete_fl
 bool mongoc_collection_save (mongoc_collection_t* collection, const(bson_t)* document, const(mongoc_write_concern_t)* write_concern, bson_error_t* error);
 bool mongoc_collection_remove (mongoc_collection_t* collection, mongoc_remove_flags_t flags, const(bson_t)* selector, const(mongoc_write_concern_t)* write_concern, bson_error_t* error);
 bool mongoc_collection_rename (mongoc_collection_t* collection, const(char)* new_db, const(char)* new_name, bool drop_target_before_rename, bson_error_t* error);
+bool mongoc_collection_find_and_modify_with_opts (mongoc_collection_t* collection, const(bson_t)* query, const(mongoc_find_and_modify_opts_t)* opts, bson_t* reply, bson_error_t* error);
 bool mongoc_collection_find_and_modify (mongoc_collection_t* collection, const(bson_t)* query, const(bson_t)* sort, const(bson_t)* update, const(bson_t)* fields, bool _remove, bool upsert, bool _new, bson_t* reply, bson_error_t* error);
 bool mongoc_collection_stats (mongoc_collection_t* collection, const(bson_t)* options, bson_t* reply, bson_error_t* error);
 mongoc_bulk_operation_t* mongoc_collection_create_bulk_operation (mongoc_collection_t* collection, bool ordered, const(mongoc_write_concern_t)* write_concern);
 const(mongoc_read_prefs_t)* mongoc_collection_get_read_prefs (const(mongoc_collection_t)* collection);
 void mongoc_collection_set_read_prefs (mongoc_collection_t* collection, const(mongoc_read_prefs_t)* read_prefs);
+const(mongoc_read_concern_t)* mongoc_collection_get_read_concern (const(mongoc_collection_t)* collection);
+void mongoc_collection_set_read_concern (mongoc_collection_t* collection, const(mongoc_read_concern_t)* read_concern);
 const(mongoc_write_concern_t)* mongoc_collection_get_write_concern (const(mongoc_collection_t)* collection);
 void mongoc_collection_set_write_concern (mongoc_collection_t* collection, const(mongoc_write_concern_t)* write_concern);
 const(char)* mongoc_collection_get_name (mongoc_collection_t* collection);
@@ -883,7 +909,9 @@ enum mongoc_error_code_t
     SERVER_SELECTION_BAD_WIRE_VERSION = 13052,
     SERVER_SELECTION_FAILURE = 13053,
     SERVER_SELECTION_INVALID_ID = 13054,
-    PROTOCOL_ERROR = 17
+    GRIDFS_CHUNK_MISSING = 13055,
+    PROTOCOL_ERROR = 17,
+    WRITE_CONCERN_ERROR = 64
 }
 
 // from file mongoc-init.h:
@@ -935,6 +963,30 @@ bool mongoc_socket_check_closed (mongoc_socket_t* sock);
 void mongoc_socket_inet_ntop (addrinfo* rp, char* buf, size_t buflen);
 ssize_t mongoc_socket_poll (mongoc_socket_poll_t* sds, size_t nsds, int timeout);
 
+// from file mongoc-find-and-modify.h:
+
+// found alias: _Anonymous_0 => mongoc_find_and_modify_flags_t
+alias _mongoc_find_and_modify_opts_t mongoc_find_and_modify_opts_t;
+
+enum mongoc_find_and_modify_flags_t
+{
+    AND_MODIFY_NONE = 0,
+    AND_MODIFY_REMOVE = 1,
+    AND_MODIFY_UPSERT = 2,
+    AND_MODIFY_RETURN_NEW = 4
+}
+
+struct _mongoc_find_and_modify_opts_t;
+
+
+mongoc_find_and_modify_opts_t* mongoc_find_and_modify_opts_new ();
+bool mongoc_find_and_modify_opts_set_sort (mongoc_find_and_modify_opts_t* opts, const(bson_t)* sort);
+bool mongoc_find_and_modify_opts_set_update (mongoc_find_and_modify_opts_t* opts, const(bson_t)* update);
+bool mongoc_find_and_modify_opts_set_fields (mongoc_find_and_modify_opts_t* opts, const(bson_t)* fields);
+bool mongoc_find_and_modify_opts_set_flags (mongoc_find_and_modify_opts_t* opts, const mongoc_find_and_modify_flags_t flags);
+bool mongoc_find_and_modify_opts_set_bypass_document_validation (mongoc_find_and_modify_opts_t* opts, bool bypass);
+void mongoc_find_and_modify_opts_destroy (mongoc_find_and_modify_opts_t* opts);
+
 // from file mongoc-client.h:
 
 alias _mongoc_client_t mongoc_client_t;
@@ -962,6 +1014,8 @@ int mongoc_client_get_max_message_size (mongoc_client_t* client);
 int mongoc_client_get_max_bson_size (mongoc_client_t* client);
 const(mongoc_write_concern_t)* mongoc_client_get_write_concern (const(mongoc_client_t)* client);
 void mongoc_client_set_write_concern (mongoc_client_t* client, const(mongoc_write_concern_t)* write_concern);
+const(mongoc_read_concern_t)* mongoc_client_get_read_concern (const(mongoc_client_t)* client);
+void mongoc_client_set_read_concern (mongoc_client_t* client, const(mongoc_read_concern_t)* read_concern);
 const(mongoc_read_prefs_t)* mongoc_client_get_read_prefs (const(mongoc_client_t)* client);
 void mongoc_client_set_read_prefs (mongoc_client_t* client, const(mongoc_read_prefs_t)* read_prefs);
 void mongoc_client_set_ssl_opts (mongoc_client_t* client, const(mongoc_ssl_opt_t)* opts);

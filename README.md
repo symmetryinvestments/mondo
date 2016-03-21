@@ -1,5 +1,5 @@
 # mondo
-D library for MongoDb (over mongo-c-driver 1.2.4).
+D library for MongoDb (over mongo-c-driver 1.3.4).
 
 You need to install libmongo on your system.
 

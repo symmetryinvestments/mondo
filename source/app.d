@@ -254,6 +254,12 @@ else void main()
    
    // Verify it is the object we've just inserted
    assert( obj["my_message"].as!string == "Ciao Mondo!" );
+   assert( obj["blah"].as!string("default") == "default"); // This field doesn't exists
+   
+   auto field = obj["my_message"].as!int(42); 
+   assert(field == 42);             // Conversion error. Defaulted
+   assert(field.exists == true);    // Field exists on db
+   assert(field.ok == false);       // But can't read as int
    
    obj["my_message"]    = "Hello World!";
    obj["my_language"]   = "en";
@@ -306,14 +312,14 @@ void bind_test()
    // Find return a User instead of a BsonObject
    foreach(user; c.find!User)
    {
-      user.nickname = user.nickname ~ "_renamed";
+      user.nickname = user.nickname ~ "_1";
       
       // It saves back object to db
       c.save(user);
    }
    
    import std.algorithm : all, endsWith;
-   assert(c.find!User.all!(x => x.nickname.endsWith("_renamed")));
+   assert(c.find!User.all!(x => x.nickname.endsWith("_1")));
 }
 
 class RandomUserGenerator

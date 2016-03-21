@@ -189,3 +189,7 @@ class RandomUserGenerator
  
 }
 ```
+
+### More examples
+
+For more examples just check unittests :)

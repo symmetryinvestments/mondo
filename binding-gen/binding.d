@@ -62,8 +62,8 @@ void main(string args[])
       
    
    // Create output file
-   mkdirRecurse(source_dir ~ "/source/c");
-   auto output = File(source_dir ~ "/source/c/mongoc.d", "w");
+   mkdirRecurse(source_dir ~ "/source");
+   auto output = File(source_dir ~ "/source/mongoc.d", "w");
    
    // 0 - Checking for versions
    output.writeln("// This file was auto-generated. Don't change it.");

@@ -306,14 +306,14 @@ void bind_test()
    // Find return a User instead of a BsonObject
    foreach(user; c.find!User)
    {
-      user.nickname = user.nickname ~ "_1";
+      user.nickname = user.nickname ~ "_renamed";
       
       // It saves back object to db
       c.save(user);
    }
    
    import std.algorithm : all, endsWith;
-   c.find!User.all!(x => x.nickname.endsWith("_renamed"));
+   assert(c.find!User.all!(x => x.nickname.endsWith("_renamed")));
 }
 
 class RandomUserGenerator

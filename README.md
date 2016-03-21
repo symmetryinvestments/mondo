@@ -106,7 +106,7 @@ struct User
 }
 
 ```
-## Do a simple search
+## Perform a simple search
 
 ```d
 import std.range;
@@ -162,7 +162,7 @@ void search_test()
 }
 
 // Helper function could be a good idea
-auto filterByName(Query q, in string name) { q.conditions["name"] = "mark"; return q; }
+auto filterByName(Query q, in string name) { q.conditions["name"] = name; return q; }
 auto showFields(Query q, in string[] fields) { fields.each!(x => q.fields[x] = true); return q; }
 
 // I use this to create some random data to fill database

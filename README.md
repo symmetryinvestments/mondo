@@ -3,6 +3,18 @@ D library for MongoDb (over mongo-c-driver 1.3.4).
 
 You need to install libmongo on your system.
 
+Fast way to get mongo-c-driver on your machine:
+
+```
+$ curl -LO https://github.com/mongodb/mongo-c-driver/releases/download/1.3.4/mongo-c-driver-1.3.4.tar.gz
+$ tar xzf mongo-c-driver-1.3.4.tar.gz
+$ cd mongo-c-driver-1.3.4/
+$ ./configure --with-libbson=bundled
+$ make 
+$ sudo make install
+```
+
+
 Tested with dmd and ldc2 on Ubuntu/Linux.
 
 ## How it works

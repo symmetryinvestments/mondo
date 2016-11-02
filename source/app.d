@@ -351,7 +351,7 @@ import std.array;
 import std.stdio;
    
 // Helper function could be a good idea
-auto filterByName(Query q, in string name) { q.conditions["name"] = "mark"; return q; }
+auto filterByName(Query q, in string name) { q.conditions["name"] = name; return q; }
 auto showFields(Query q, in string[] fields) { fields.each!(x => q.fields[x] = true); return q; }
       
 void search_test()

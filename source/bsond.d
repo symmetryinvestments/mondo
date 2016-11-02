@@ -7,6 +7,8 @@ import std.array;
 import std.traits;
 import std.conv;
 
+import mongoc;
+
 alias BsonLong      = long;
 alias BsonInt       = int;
 alias BsonString    = string;
@@ -205,9 +207,22 @@ struct BsonObject
 
    immutable(ubyte)[]  exportData() const          { return exportRaw(this); }
    void                importData(in ubyte* data)  { genericParse!BsonObject(data,  this); }
+   void                importData(in string data)
+   {
+         bson_error_t error;
+         bson_t *bson = bson_new_from_json(cast(ubyte*)data, (cast(ubyte[])data).length, &error);
+
+         if (bson)
+         {
+            importData(bson_get_data(bson));
+            bson_destroy(bson);
+         }
+         else throw new BsonException(error.message.to!string, BsonExceptionCode.decodingError);
+   }
 
    BsonObject dup()   const   { return BsonObject(exportData.ptr); }
    this(in ubyte* data)    { this.importData(data); }
+   this(in string data)    { this.importData(data); }
 
    bool empty() const { return value.length == 0; }
 
@@ -236,6 +251,7 @@ struct BsonObject
    /// Build from a tuple
    /// -------
    /// auto bo = new BsonObject("key", "value", "another_key", 3); // Something like { "key" : "value", "another_key" : 3 }
+   /// -------
    this(T...)(T vals)
    {
       if (T.length > 0)
@@ -469,7 +485,7 @@ struct BsonArray
    /// Build from a tuple
    /// -------
    /// auto bo = new BsonObject("key", 1, 3.4); // Something like ["key", 1, 3.4]
-
+   /// -------
    this(T...)(T vals)  { append(vals); }
 
    this(T)(T[] vals)  { append(vals); }
@@ -1377,6 +1393,7 @@ private void genericParseRecurse(T)(in ubyte[] data, ref size_t cursor, ref T re
 
 unittest
 {
+
    import std.stdio;
    import std.exception;
 
@@ -1532,7 +1549,6 @@ unittest
    assert(newObj["type"] == "changed");
    assert(obj["/sub-obj/type"] != newObj["type"]);
    
-   
    // Working with const/immutable/ctfe
    version(LDC) {}
    else
@@ -1567,4 +1583,9 @@ unittest
      
      assert(cObj["/address"].toString == `{"street":"main st.","number":15}`);
    }
+
+   BsonObject fromJSON = BsonObject(`{"hello" : "world", "test": 1, a"sub": {"zero": 2}}`);
+   assert(fromJSON["hello"].to!string == "world");
+   assert(fromJSON["/sub/zero"].to!int == 2);
+
 }

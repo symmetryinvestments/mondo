@@ -92,7 +92,7 @@ void main(string args[])
       // Check for interesting lines
       foreach(line; File("/tmp/tmp_binding.d").byLineCopy)
       {
-         foreach(key; ["bson_as_json (", "bson_strfreev (", "oid_init (", "bson_context_get_default (", "bson_context_destroy (", "bson_destroy (", "bson_get_data (", "bson_new_from_data (", "bson_init_static ("])
+         foreach(key; ["bson_new_from_json (", "bson_as_json (", "bson_strfreev (", "oid_init (", "bson_context_get_default (", "bson_context_destroy (", "bson_destroy (", "bson_get_data (", "bson_new_from_data (", "bson_init_static ("])
             if (line.canFind(key))
             {
                output.writeln(line);

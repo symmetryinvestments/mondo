@@ -3,6 +3,18 @@ D library for MongoDb (over mongo-c-driver 1.3.4).
 
 You need to install libmongo on your system.
 
+Fast way to get mongo-c-driver on your machine:
+
+```
+$ curl -LO https://github.com/mongodb/mongo-c-driver/releases/download/1.3.4/mongo-c-driver-1.3.4.tar.gz
+$ tar xzf mongo-c-driver-1.3.4.tar.gz
+$ cd mongo-c-driver-1.3.4/
+$ ./configure --with-libbson=bundled
+$ make 
+$ sudo make install
+```
+
+
 Tested with dmd and ldc2 on Ubuntu/Linux.
 
 ## How it works
@@ -106,7 +118,7 @@ struct User
 }
 
 ```
-## Do a simple search
+## Perform a simple search
 
 ```d
 import std.range;
@@ -162,7 +174,7 @@ void search_test()
 }
 
 // Helper function could be a good idea
-auto filterByName(Query q, in string name) { q.conditions["name"] = "mark"; return q; }
+auto filterByName(Query q, in string name) { q.conditions["name"] = name; return q; }
 auto showFields(Query q, in string[] fields) { fields.each!(x => q.fields[x] = true); return q; }
 
 // I use this to create some random data to fill database

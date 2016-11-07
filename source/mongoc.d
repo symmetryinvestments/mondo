@@ -1,6 +1,13 @@
 // This file was auto-generated. Don't change it.
 // mongo-c-driver version: 1.3.4
 // libbson version: 1.3.4
+
+import core.stdc.stdio;
+import core.sys.posix.unistd;
+import core.stdc.stdio;
+import core.sys.posix.unistd;
+import core.stdc.stdio;
+
 extern (C): 
 
 // libbson stuffs --->
@@ -556,11 +563,7 @@ bool mongoc_matcher_match (const(mongoc_matcher_t)* matcher, const(bson_t)* docu
 void mongoc_matcher_destroy (mongoc_matcher_t* matcher);
 
 // from file mongoc-stream.h:
-import core.stdc.stdio;
-import core.sys.posix.unistd;
-import core.stdc.stdio;
-import core.sys.posix.unistd;
-import core.stdc.stdio;
+
 
 
 alias _mongoc_stream_t mongoc_stream_t;

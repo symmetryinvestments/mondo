@@ -1584,7 +1584,7 @@ unittest
      assert(cObj["/address"].toString == `{"street":"main st.","number":15}`);
    }
 
-   BsonObject fromJSON = BsonObject(`{"hello" : "world", "test": 1, a"sub": {"zero": 2}}`);
+   BsonObject fromJSON = BsonObject(`{"hello" : "world", "test": 1, "sub": {"zero": 2}}`);
    assert(fromJSON["hello"].to!string == "world");
    assert(fromJSON["/sub/zero"].to!int == 2);
 

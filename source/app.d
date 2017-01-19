@@ -223,13 +223,23 @@ unittest
       
    }
 
+   {
+      import std.datetime : SysTime, DateTime;
+      import core.time : dur;
+
+      c.drop();
+      c.insert(BO("dt", SysTime(DateTime(2013,01,01,12,34))+dur!"msecs"(123)));
+
+      auto b = c.findOne();
+      assert (b["dt"].as!BsonDateTime == SysTime(DateTime(2013,01,01,12,34))+dur!"msecs"(123));
+   }
    writeln("TESTS PASSED");
 }
 
 import mondo;
 import bsond;
    
-version(unittest) { void main() {} }
+version(unittest) { }
 else void main()
 {   
    // Create a connection to mongo
@@ -329,12 +339,14 @@ class RandomUserGenerator
    void popFront() 
    {
       import std.random;
+      import std.conv : to;
+
       string[] names = ["mark", "john", "andrew"];
       string name = randomSample(names, 1).front;
       
       front = BO(
          "name", name, 
-         "nickname", name ~ uniform(1000,9999).to!string,
+         "nickname", name ~ to!string(uniform(1000,9999)),
          "age", uniform(20,30),
          "points", uniform(0.0f, 100.0f)
       ); 

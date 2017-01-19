@@ -116,12 +116,12 @@ struct BsonRegEx
 enum isNativeBsonValue(T) = 
    is(Unqual!T == BsonLong) || is(Unqual!T == BsonInt) || is(Unqual!T == BsonString) || 
    is(Unqual!T == BsonBool) || is(Unqual!T == BsonFloat) || is(Unqual!T == BinaryData) || 
-   is(Unqual!T == ObjectId) || is(Unqual!T == BsonDateTime) || is (Unqual!T == BsonNull) ||
+   is(Unqual!T == ObjectId) || is(Unqual!T == BsonDateTime) || is(Unqual!T == SysTime) || is (Unqual!T == BsonNull) ||
    is(Unqual!T == BsonObject) || is (Unqual!T == BsonArray) || is(Unqual!T == BsonRegEx);
 
 enum isComplexBsonValue(T) = 
    is(Unqual!T == BinaryData) || is(Unqual!T==ObjectId) || is(Unqual!T == BsonObject) || 
-   is (Unqual!T==BsonArray) || is(Unqual!T == BsonRegEx);
+   is (Unqual!T==BsonArray) || is(Unqual!T == BsonRegEx) || is(Unqual!T == BsonDateTime);
 
 enum isBsonContainerClass(T) =  is(T == class) && __traits(compiles, new T(BsonObject()));
 enum isBsonContainerStruct(T) = !is(T == BsonObject) && !is(T == BsonArray) && is(T == struct) && __traits(compiles, T(BsonObject()));
@@ -884,7 +884,8 @@ struct BsonValue
       else if (type == typeid(BsonDateTime))
       {
          appendHeader(buffer, 9, key);
-         buffer.append!(long, Endian.littleEndian)(get!BsonDateTime.stdTime/10000);
+	 SysTime tm = get!SysTime;
+         buffer.append!(long, Endian.littleEndian)(tm.toUnixTime!long*1000+tm.fracSecs.total!"msecs");
       }
       else if (type == typeid(BsonNull))
       {
@@ -926,7 +927,11 @@ struct BsonValue
       else if (type == typeid(BsonArray))     buffer.put(get!BsonArray.exportJson);
       else if (type == typeid(ObjectId))      buffer.put(std.conv.to!string(get!ObjectId));
       else if (type == typeid(BsonBool))      buffer.put(get!BsonBool == true?"true":"false");
-      else if (type == typeid(BsonDateTime))  buffer.put(std.conv.to!string(get!BsonDateTime.stdTime/10000));
+      else if (type == typeid(BsonDateTime))  
+      {
+         SysTime tm = get!SysTime;
+         buffer.put(std.conv.to!string(tm.toUnixTime!long*1000 + tm.fracSecs.total!"msecs"));
+      }
       else if (type == typeid(BsonNull))      buffer.put("null");
       else if (type == typeid(BsonInt))       buffer.put(std.conv.to!string(get!BsonInt));
       else if (type == typeid(BsonLong))      buffer.put(std.conv.to!string(get!BsonLong));
@@ -1002,10 +1007,10 @@ struct BsonValue
       // if T is a native value, no conversion needed
       static if (isNativeBsonValue!T)
          if (typeid(T) == type)
-      {
-         static if (is(T == typeof(null))) return null;
-         else return get!T;
-      }
+         {
+            static if (is(T == typeof(null))) return null;
+            else return get!T;
+         }
 
       static if (isValidBsonValue!T && !isComplexBsonValue!T)
       {
@@ -1367,7 +1372,8 @@ private void genericParseRecurse(T)(in ubyte[] data, ref size_t cursor, ref T re
             break;
 
          case 8:     result[key] = (data.peek!ubyte(&cursor) != 0);   break;
-         case 9:     result[key] = SysTime(data.peek!(long, Endian.littleEndian)(&cursor) * 10000); break;
+         case 9:     long l = data.peek!(long, Endian.littleEndian)(&cursor); result[key] = SysTime.fromUnixTime(l/1000, PosixTimeZone.getTimeZone("UTC"))+dur!"msecs"(l%1000); break;
+
          case 0xa:   result[key] = null; break;
 
          case 0xb:

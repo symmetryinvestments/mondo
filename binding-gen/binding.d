@@ -8,7 +8,7 @@ import std.range;
 import std.file;
 import std.path;
 
-void main(string args[])
+void main(string[] args)
 {
    string clang_version;
    string dstep_dir;
@@ -19,7 +19,7 @@ void main(string args[])
       auto clang = execute(["clang", "-v"]);
       enforce(clang.status == 0, "Please install clang on your machine");
    
-      auto match = clang.output.splitter("\n").front.matchFirst(regex("(3.[0-9].[0-9]+)"));
+      auto match = clang.output.splitter("\n").front.matchFirst(regex("([3-9].[0-9].[0-9]+)"));
       enforce(match, "Can't guess clang version");
       
       clang_version = match.hit;
@@ -40,7 +40,7 @@ void main(string args[])
       enforce(dstep.status == 0, "Please install dstep on your machine. " ~ dstep.output);
    }
    
-      
+
    // Try to check for mongo source 
    {
       import std.path : buildNormalizedPath;
@@ -48,7 +48,7 @@ void main(string args[])
       immutable current_dir = getcwd;
       
       // First try
-      auto mongo_c = current_dir ~ "/mongo-c-driver";
+      string mongo_c = current_dir ~ "/mongo-c-driver";
       
       // Second try
       if (!mongo_c.exists) mongo_c = current_dir ~ "/../mongo-c-driver";
@@ -75,8 +75,9 @@ void main(string args[])
    output.writeln();
    output.writeln("// libbson stuffs --->");
   
+   immutable mongoc_dir = source_dir ~ "/mongo-c-driver/src/mongoc";
    immutable bson_dir = source_dir ~ "/mongo-c-driver/src/libbson/src/bson/";
-   immutable bson_include = "-I" ~ bson_dir;
+   immutable bson_include = "-I" ~ bson_dir ~ "-I"~mongoc_dir;
    
    output.writeln;
    
@@ -84,12 +85,31 @@ void main(string args[])
    foreach(j; ["bson-context.h","bson.h", "bson-oid.h", "bson-string.h"])
    {
       immutable path = bson_dir ~ j;
-      string command = "dstep -DBSON_COMPILATION " ~ dstep_include ~ " " ~ bson_include ~ " " ~ path ~ " -o /tmp/tmp_binding.d";
-
+      string command = "dstep --comments=false -DBSON_COMPILATION " ~ dstep_include ~ " " ~ bson_include ~ " " ~ path ~ " -o /tmp/tmp_binding.d";
+	
+      writeln("Converting ", j,  " ..."); stdout.flush;
       auto bson_conversion = executeShell(command, null, Config.none, size_t.max, dstep_dir);
       enforce(bson_conversion.status == 0, "Error running dstep. " ~ bson_conversion.output);
 
+/*
+BSON_EXPORT (const uint8_t *)
+bson_get_data (const bson_t *bson);
+*/
+
       // Check for interesting lines
+      {
+         import std.regex;
+         auto content = readText("/tmp/tmp_binding.d");
+         foreach(key; ["bson_new_from_json", "bson_as_json", "bson_strfreev", "bson_oid_init", "bson_context_get_default", "bson_context_destroy", "bson_destroy", "bson_get_data", "bson_new_from_data", "bson_init_static"])
+         {
+            auto m = matchAll(content, regex(";[^;]*^[^!;]*"~key~"[^;]*;", "m"));
+            
+            if (m)
+               output.writeln(m.hit[1..$]);
+         }
+      }
+
+/*
       foreach(line; File("/tmp/tmp_binding.d").byLineCopy)
       {
          foreach(key; ["bson_new_from_json (", "bson_as_json (", "bson_strfreev (", "oid_init (", "bson_context_get_default (", "bson_context_destroy (", "bson_destroy (", "bson_get_data (", "bson_new_from_data (", "bson_init_static ("])
@@ -99,12 +119,14 @@ void main(string args[])
                break;
             }
       }
+*/
+
    }  
    
    // bson data structs
    output.writeln("// libbson data struct --->");
    {
-      string command = "dstep -DBSON_COMPILATION " ~ dstep_include ~ " " ~ bson_include ~ " " ~ bson_dir ~ "bson-types.h" ~ " -o /tmp/tmp_binding.d";
+      string command = "dstep --comments=false -DBSON_COMPILATION " ~ dstep_include ~ " " ~ bson_include ~ " " ~ bson_dir ~ "bson-types.h" ~ " -o /tmp/tmp_binding.d";
 
       string[string] aliasMap;
       long parensCount;
@@ -154,15 +176,17 @@ void main(string args[])
    output.writeln();
    output.writeln("// mongo-c-clients stuffs --->");
    
-   immutable mongoc_dir = source_dir ~ "/mongo-c-driver/src/mongoc/";
-   immutable mongoc_include = "-I" ~ mongoc_dir;
+   immutable mongoc_include = "-I" ~ mongoc_dir ~ " -I" ~ bson_dir;
    
    bool[string] structSignatures;
-   bool[string] aliasSignatures;
-      
+  
    // Import functions
    foreach(DirEntry j; dirEntries(mongoc_dir, SpanMode.shallow).filter!(x => x.name.endsWith(".h") &&  !x.name.endsWith("-private.h")))
    {
+      // Blacklist :)
+      if (["mongoc-rand.h", "utlist.h", "mongoc-version.h", "mongoc-config.h"].canFind(j.name.baseName))
+         continue;
+
       // --- Workaround for a bug (missing declaration on mongoc-database.h)
       if (j.name.baseName == "mongoc-database.h")
       {
@@ -182,12 +206,32 @@ void main(string args[])
          
          j = DirEntry("/tmp/mongoc-database-patched.c");
       }
+
+      // Another bug
+      if (j.name.baseName =="mongoc-topology-description.h")
+      {
+         auto patch = File("/tmp/mongoc-topology-description-patched.c", "w");
+         auto original = File(j, "r");
+         bool patched = false;
+         
+         patch.writeln(`#include "mongoc-server-description.h"`);
+
+         foreach(l; original.byLineCopy)
+         {
+            patch.writeln(l);
+         }
+         
+         j = DirEntry("/tmp/mongoc-topology-description-patched.c");
+
+      }
+
       // --- end workaround
       
       output.writeln;
       output.writeln("// from file ", j.name.baseName, ":");
       string command = "dstep -DMONGOC_I_AM_A_DRIVER -DMONGOC_COMPILATION " ~ dstep_include ~ " " ~ bson_include ~ " " ~ mongoc_include ~ " " ~ j ~ " -o /tmp/tmp_binding.d";
 
+      writeln("Converting ", j.name.baseName, " ..."); stdout.flush;
       auto mongoc_conversion = executeShell(command, null, Config.none, size_t.max, dstep_dir);
       enforce(mongoc_conversion.status == 0, "Error running dstep. " ~ mongoc_conversion.output);
       
@@ -197,45 +241,26 @@ void main(string args[])
          writeln(mongoc_conversion.output);
       }
       
-      string[string] aliasMap;
-      
+
       // Check for interesting lines
       foreach(line; File("/tmp/tmp_binding.d").byLineCopy)
       {
          // Just written at top of generated file
          if (line.startsWith("extern")) continue;
          
-         // Simple alias conversion
-         if (line.startsWith("alias"))
+         if (auto m = line.matchFirst(regex(`^(alias|struct|typedef).*;.*$`)))
          {
-            if (auto first = line.matchFirst(regex("alias ([A-Za-z0-9_]+) ([A-Za-z0-9_]+);")))
-            {
-               
-               if (first[1].startsWith("_Anonymous"))
-               {
-                  aliasMap[first[1]] = first[2];
-                  output.writeln("// found alias: ", first[1], " => ", first[2]);
-                  continue;
-               }
-               else if (first[1] !in aliasSignatures)
-               {
-                  aliasSignatures[first[1]] = true;
-               }
-               else continue;
-
-            }
+            import std.string : strip;
+            auto stripped = line.strip();
+            if (stripped in structSignatures) continue;
+            else structSignatures[stripped] = true;
          }
-         
-         if (auto first = line.matchFirst(regex("struct[ ]+([0-9a-zA-Z_-]+);")))
-         {
-            if (first[1] in structSignatures) continue;
-            structSignatures[first[1]] = true;
-         }
-         
-         foreach(k,v; aliasMap)
-            line = line.replace(k,v);
 
          // I convert MONGO_XXX_YYY to YYY
+         if (auto m = line.matchFirst(regex("^[ ]*enum.*(MONGOC_)[A-Z]+_.*=.*,?")))
+            line = line.replace(m[1], "");
+
+
          if (auto m = line.matchFirst(regex("(MONGOC_[A-Z]+_).*=.*,?")))
             line = line.replace(m[1], "");
             

@@ -206,8 +206,20 @@ struct BsonObject
    string              toString()                  { return exportJson(this); }
 
    immutable(ubyte)[]  exportData() const          { return exportRaw(this); }
-   void                importData(in ubyte* data)  { genericParse!BsonObject(data,  this); }
-   void                importData(in string data)
+   
+   private void initValue() 
+   { 
+      if (value is null)
+         value = new PreservedAA!(string, BsonValue); 
+   }
+
+   void importData(in ubyte* data)  
+   { 
+      initValue();
+      genericParse!BsonObject(data,  this); 
+   }
+
+   void  importData(in string data)
    {
          bson_error_t error;
          bson_t *bson = bson_new_from_json(cast(ubyte*)data, (cast(ubyte[])data).length, &error);
@@ -223,14 +235,17 @@ struct BsonObject
    BsonObject dup()   const   { return BsonObject(exportData.ptr); }
    this(in ubyte* data)    { this.importData(data); }
    this(in string data)    { this.importData(data); }
-
-   bool empty() const { return value.length == 0; }
+   
+   bool empty() const { return value is null || value.length == 0; }
 
    void dump() { writeln(value); }
 
    // Implement "in" operator for BsonObject
    auto opBinaryRight(string op)(string key) const if (op == "in")
    {
+      if (value is null)
+         return null;
+
       return key in value;
    }
 
@@ -238,6 +253,9 @@ struct BsonObject
    {
       import std.algorithm : uniq, sort;
 
+      if (this.value is null || b.value is null)
+         return this.value == b.value;
+      
       if (this.value.keys.length != b.value.keys.length) 
          return false;
       
@@ -254,6 +272,8 @@ struct BsonObject
    /// -------
    this(T...)(T vals)
    {
+      initValue();
+      
       if (T.length > 0)
          append(vals);
    }
@@ -293,6 +313,8 @@ struct BsonObject
 
    void opIndexOpAssign(string op, K, T)(K val, T index) if (op == "~" && (isValidBsonValue!T || is(T == BsonValue)))
    {
+      initValue();
+
       if (index.length == 0)
          throw new BsonException(text("Empty index"), BsonExceptionCode.invalidKey);
 
@@ -353,24 +375,27 @@ struct BsonObject
    inout(BsonValue) opIndex(T)(T idx) inout
    if (isSomeString!T)
    {
-      if (idx[0] == '/')
+      if (value !is null)
       {
-         // Parse composed key
-         auto parseResult = parseKey(idx);
-         string key = parseResult[0];
-         string nextKey = parseResult[1];
-         bool isLastChunk = parseResult[1].empty;
-
-         if (key.empty)
-            throw new BsonException(text("Empty index"), BsonExceptionCode.invalidKey);
-
-         if (!isNumericKey(key) && key in value)
+         if(idx[0] == '/')
          {
-            if (isLastChunk) return value[key];
-            else return value[key].opIndex(nextKey);
+            // Parse composed key
+            auto parseResult = parseKey(idx);
+            string key = parseResult[0];
+            string nextKey = parseResult[1];
+            bool isLastChunk = parseResult[1].empty;
+
+            if (key.empty)
+               throw new BsonException(text("Empty index"), BsonExceptionCode.invalidKey);
+
+            if (!isNumericKey(key) && key in value)
+            {
+               if (isLastChunk) return value[key];
+               else return value[key].opIndex(nextKey);
+            }
          }
+         else if (idx in value) return value[idx];
       }
-      else if (idx in value) return value[idx];
 
       return inout(BsonValue)();
    }
@@ -378,6 +403,7 @@ struct BsonObject
 
    void opIndexAssign(K,T)(K val, T index) if (isSomeString!T)
    {
+      initValue();
 
       static if (isArray!K && !isSomeString!K)
       {
@@ -417,6 +443,7 @@ struct BsonObject
          }
          else
          {
+            
             static if (isInstanceOf!(BsonField, K)) value[index] = val.value;
             else value[index] = val;
          }
@@ -427,33 +454,40 @@ struct BsonObject
    {
       int result = 0;
 
-      foreach(e; value)
-      {
-         result = dg(e);
-         if (result)
-            break;
-      }
+      if (value !is null)
+         foreach(e; value)
+         {
+            result = dg(e);
+            if (result)
+               break;
+         }
 
       return result;
    }
 
-   int opApply(int delegate(ref string, in BsonValue) dg) const
+   int opApply(int delegate(const ref string, in BsonValue) dg) const
    {
       int result = 0;
 
-      foreach(key, e; value)
-      {
-         result = dg(key, e);
-         if (result)
-            break;
-      }
+      if (value !is null)
+         foreach(key, e; value)
+         {
+            result = dg(key, e);
+            if (result)
+               break;
+         }
 
       return result;
    }
 
-   bool remove(in string idx) { return value.remove(idx); }
+   bool remove(in string idx) 
+   {
+      initValue();
+      return value.remove(idx); 
+   }
 
-   private BsonValue[string] value;
+   private PreservedAA!(string, BsonValue) value;
+   //private BsonValue[string] value;
    //alias value this;
 }
 
@@ -543,7 +577,7 @@ struct BsonArray
    }
 
 
-   int opApply(int delegate(ref size_t, in BsonValue) dg) const
+   int opApply(int delegate(const ref size_t, in BsonValue) dg) const
    {
       int result = 0;
 
@@ -718,16 +752,19 @@ private immutable(ubyte)[] exportRaw(T)(T obj) if (is(Unqual!T == BsonObject) ||
    auto subbuffer = appender!(immutable(ubyte)[])();
 
    static if(is(Unqual!T == BsonObject))
+   {
       if (obj["_id"].exists) subbuffer.put(obj["_id"].exportRaw("_id"));
+   }
 
    foreach(i, v; obj)
    {
       static if(is(Unqual!T == BsonObject))
+      {
          if (i == "_id") continue;
-
+      }
       subbuffer.put(v.exportRaw(to!string(i)));
    }
-
+   
    auto subdata = subbuffer.data;
    buffer.append!(int, Endian.littleEndian)(cast(int)subdata.length + 5);
    buffer.put(subdata);
@@ -1097,14 +1134,14 @@ struct BsonValue
       else throw new BsonException("forEach(k; object) works only with BsonObject & BsonArray", BsonExceptionCode.invalidMethod);
    }
 
-   int opApply(int delegate(ref string, in BsonValue) const dg) const
+   int opApply(int delegate(const ref string, in BsonValue) const dg) const
    {
       if (type == typeid(BsonObject)) return get!BsonObject.opApply(dg);
       else throw new BsonException("forEach(string k, v; object) works only with BsonObject", BsonExceptionCode.invalidMethod);
    }
 
 
-   int opApply(int delegate(ref size_t, in BsonValue) const dg) const
+   int opApply(int delegate(const ref size_t, in BsonValue) const dg) const
    {
       if (type == typeid(BsonArray)) return (get!BsonArray).opApply(dg);
       else throw new BsonException("forEach(size_t k, v; object) works only with BsonArray", BsonExceptionCode.invalidMethod);
@@ -1397,6 +1434,91 @@ private void genericParseRecurse(T)(in ubyte[] data, ref size_t cursor, ref T re
       throw new BsonException(text("BsonObject malformed. Expected EOD found: ", eod), BsonExceptionCode.decodingError);
 }
 
+
+// Just a wrapper over AA to force preservation of keys order
+class PreservedAA(K,V)
+{
+   inout @property keys() const { return _keys; }
+
+   int opApply(int delegate(in V) dg ) const
+   {
+      int result = 0;
+
+      foreach(k; keys)
+      {
+         result = dg(_aa[k]);
+         if (result)
+            break;
+      }
+
+      return result;
+   }
+
+   int opApply(int delegate(const ref K, in V) dg) const 
+   {
+      int result = 0;
+
+      foreach(k; keys)
+      {
+         result = dg(k, _aa[k]);
+         if (result)
+            break;
+      }
+
+      return result;
+   }
+   
+
+   void opIndexAssign(KK, VV)(VV val, KK idx)
+   {
+      import std.conv:to;
+
+      if (idx !in _aa)
+         _keys ~= idx;
+
+      _aa[idx] = val;
+   }
+
+   auto ref opIndex(T)(T idx) inout 
+   {
+      return _aa[idx];
+   }
+
+   bool remove(K key)
+   {
+      bool result = _aa.remove(key);
+      
+      if (result)
+      {
+         import std.algorithm : remove, countUntil;
+         _keys = _keys.remove(_keys.countUntil(key));
+      }
+
+      return result;
+   }
+
+   bool opEquals(const PreservedAA!(K,V) obj) const
+   {
+      return this._aa == obj._aa;
+   }
+
+   override string toString() const 
+   {
+      import std.conv : to;
+      return _aa.to!string;
+   }
+
+   auto opBinaryRight(string op)(K k) inout if (op == "in") {
+      return (k in _aa);
+   }
+
+   size_t length() const { return _aa.length; }
+
+   private K[] _keys;
+   private V[K] _aa;
+}
+
+
 unittest
 {
 
@@ -1443,14 +1565,13 @@ unittest
    assert(obj["/tags/1"].to!float == 2.0f);       // obj["/tags/1"] is int
    assert(obj["/tags/0"].to!string == "first");   // obj["/tags/0"] is string 
    assertThrown!(std.conv.ConvException)(obj["/tags/0"].to!int); // Can't convert "first" to int 
-   
+
    // as!type works like to, but it doesn't throw exceptions, it simply returns a default value
    assert(obj["/address/street"].as!string == "main st.");
    assert(obj["/address/number"].as!string == "15");
    assert(obj["/address/asdasd"].as!int == int.init);      // Default value is type.init
    assert(obj["/address/asdasd"].as!int(50) == 50);      // Default value can be specified
    assert(obj["/address/number"].as!int(50) == 15);
-
    assert(!obj["address"]["number"]["this"].exists);      
    assert(!obj["address"]["asdasd"]["blah"].exists);   
 
@@ -1460,15 +1581,14 @@ unittest
 
    // ... Vs this
    obj["/address/number/blah/blah"] = 42;   // Here we recreate the whole object tree
+
    assert(obj["/address/number/blah/blah"].exists == true);
    assert(obj["/address/number/blah/blah"].get!int == 42);
-
    // More as!T examples
    assert(obj["/tags/1"].as!int == 2);
    assert(obj["/tags/1"].as!long == 2);
    assert(obj["/tags/1"].as!string == "2");
    assert(obj["/tags/1"].as!string.ok);
-   
    assert(obj["/tags/0"].as!string("nothing") == "first");
 
    // This field doesn't exists. It returns default value
@@ -1488,6 +1608,7 @@ unittest
    assert(obj["/address/number"].exists == true);
    assert(obj.toString == newObj.toString);
    obj["address"].remove("number");
+
    assert(obj["/address/number"].exists == false);
    assert(obj.toString != newObj.toString);
 
@@ -1521,7 +1642,7 @@ unittest
    assert(obj["/tags/10"] == "fail");
    assert(obj["/tags/9"].isType!null);
    assert(obj["/tags"].as!BsonArray.length == 11);
-  
+
    // "Address" it's not an array
    assertThrown(obj["/address/10"] = "fail");   
 
@@ -1554,44 +1675,8 @@ unittest
    obj["/sub-obj/type"] = "copy";
    assert(newObj["type"] == "changed");
    assert(obj["/sub-obj/type"] != newObj["type"]);
-   
-   // Working with const/immutable/ctfe
-   version(LDC) {}
-   else
-   {
-      enum ctObj = BO
-      (
-         "type", "place", 
-         "address", 
-         BO
-         (
-            "street", "main st.", 
-            "number", 15
-         ), 
-         "tags", BA("first", 2, "last"),   // Mixed-type array
-         "array", [10, 20, 30] 
-      );
-     
-     //enum stObj = ctObj.toString;
-     const cObj = ctObj;
-     
-     assert(cObj["type"].get!string == "place");
-     assertThrown!(BsonException)(cObj["type"].get!int);
-     assertNotThrown(cObj["/tags/0"].get!string);
-     
-     assert(cObj["/address/number"].as!int == 15);
-     assert(cObj["/array"].to!BsonArray.length == 3);
-     assert(cObj["/array"].as!BsonArray.length == 3);
-     assert(cObj["/tags"].to!BsonArray.length == 3);
-     
-     assert(cObj["/address/number"].isType!int);
-     assert(cObj["/address/number"].exists);
-     
-     assert(cObj["/address"].toString == `{"street":"main st.","number":15}`);
-   }
 
    BsonObject fromJSON = BsonObject(`{"hello" : "world", "test": 1, "sub": {"zero": 2}}`);
    assert(fromJSON["hello"].to!string == "world");
    assert(fromJSON["/sub/zero"].to!int == 2);
-
 }

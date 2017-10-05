@@ -1,6 +1,11 @@
 // This file was auto-generated. Don't change it.
 // mongo-c-driver version: 1.8.0
 // libbson version: 1.7.0
+
+import core.stdc.stdio;
+import core.sys.posix.unistd;
+import core.sys.posix.netdb;
+
 extern (C): 
 
 // libbson stuffs --->
@@ -567,7 +572,7 @@ mongoc_stream_t* mongoc_stream_gridfs_new (mongoc_gridfs_file_t* file);
  * limitations under the License.
  */
 
-import core.stdc.stdio;
+
 
 
 alias mongoc_stream_t = _mongoc_stream_t;
@@ -1642,7 +1647,6 @@ bool mongoc_check_version (
  * limitations under the License.
  */
 
-import core.stdc.stdio;
 
 
 struct _mongoc_gridfs_file_t;
@@ -2618,8 +2622,6 @@ bool mongoc_collection_validate (
  * limitations under the License.
  */
 
-import core.stdc.stdio;
-import core.sys.posix.netdb;
 
 
 alias mongoc_socklen_t = uint;

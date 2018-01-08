@@ -272,8 +272,6 @@ struct BsonObject
    /// -------
    this(T...)(T vals)
    {
-      initValue();
-      
       if (T.length > 0)
          append(vals);
    }
@@ -281,6 +279,7 @@ struct BsonObject
    /// Append tuple to BsonObject. See ctor.
    void append(T...)(T vals)
    {
+       initValue();
       // Appends nothing, recursion ends
       static if (vals.length == 0) return;
 
@@ -1555,6 +1554,9 @@ unittest
       "tags", BA("first", 2, "last"),   // Mixed-type array
       "array", [10, 20, 30] 
    );
+   // Check that you can append to BO constructed without args.
+   BO emptyBO;
+   emptyBO.append (`test`, `value`);
 
    // get!type only works if requested type match the actual one
    assert(obj["type"].get!string == "place");
@@ -1679,4 +1681,5 @@ unittest
    BsonObject fromJSON = BsonObject(`{"hello" : "world", "test": 1, "sub": {"zero": 2}}`);
    assert(fromJSON["hello"].to!string == "world");
    assert(fromJSON["/sub/zero"].to!int == 2);
+
 }

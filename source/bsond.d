@@ -1301,7 +1301,7 @@ struct BsonValue
 
 private T genericParse(T)(in ubyte* data, ref T result)  if (is(T == BsonObject) || is(T == BsonArray))
 {
-   import std.c.string;
+   import core.stdc.string;
 
    size_t index = 0;
 

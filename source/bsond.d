@@ -7,7 +7,8 @@ import std.array;
 import std.traits;
 import std.conv;
 
-import mongoc;
+//import mongoc;
+import bsonc;
 
 alias BsonLong      = long;
 alias BsonInt       = int;
@@ -1393,7 +1394,7 @@ private void genericParseRecurse(T)(in ubyte[] data, ref size_t cursor, ref T re
             auto builder = appender!(ubyte[])();
             while(datasize--) builder.put(data.peek!ubyte(&cursor));
 
-            bd = builder.data;
+            bd._data = builder.data;
             result[key] = bd;
             break;
 

@@ -1,4 +1,4 @@
-﻿private import mongoc;
+﻿import mongoc;
 
 import bsond;
 
@@ -8,14 +8,18 @@ private import std.conv       : to, text;
 private import std.regex      : regex, match;
 private import std.string     : toUpper, toStringz;
 private import std.range      : empty, isInputRange, ElementType, array;
-
+import std.traits : EnumMembers;
+import std.algorithm : map;
+import std.conv : to;
+import std.array : array;
+import std.string : join;
 
 // Some alias over c library structs/enums
 alias LogLevel    = mongoc_log_level_t;
-alias QueryFlags  = mongoc_query_flags_t;
-alias InsertFlags = mongoc_insert_flags_t;
-alias DeleteFlags = mongoc_delete_flags_t;
-alias UpdateFlags = mongoc_update_flags_t;
+//alias QueryFlags  = mongoc_query_flags_t;
+//alias InsertFlags = mongoc_insert_flags_t;
+//alias DeleteFlags = mongoc_delete_flags_t;
+//alias UpdateFlags = mongoc_update_flags_t;
 
 alias ErrorCodes     = mongoc_error_code_t;
 alias ErrorDomains   = mongoc_error_domain_t;

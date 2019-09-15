@@ -827,7 +827,7 @@ struct Cursor(T = BsonObject) if (is(T == BsonObject) || isBsonContainer!T)
       _inited = true;
 
       // Read next value
-      if (!mongoc_cursor_next(_cursor, &_current))
+      if (!mongoc_cursor_next(_cursor, cast(const(bson_t)**) &_current))
       {
          _empty = true;
          return false;

@@ -1,3 +1,3 @@
-d++ --preprocess-only --include-path .\mongo-c-driver\build\src\libbson\src --include-path .\mongo-c-driver\src\libbson\src\ --keep-d-files source\bsonc.dpp
+d++ --preprocess-only --include-path .\mongo-c-driver\include\libbson-1.0\src --include-path .\mongo-c-driver\include\libbson-1.0 --keep-d-files source\bsonc.dpp --clang-option=-m64
 
-d++ --preprocess-only --include-path .\mongo-c-driver\build\src\libmongoc\src --include-path .\mongo-c-driver\src\libmongoc\src --include-path .\mongo-c-driver\src\libmongoc\src\mongoc --include-path .\mongo-c-driver\build\src\libbson\src --include-path .\mongo-c-driver\src\libbson\src --keep-d-files source\mongoc.dpp
+d++ --preprocess-only --include-path .\mongo-c-driver\include\libmongoc-1.0 --include-path .\mongo-c-driver\include\libbson-1.0 --keep-d-files source\mongoc.dpp --clang-option=-m64

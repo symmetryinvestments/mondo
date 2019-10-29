@@ -415,7 +415,7 @@ class Mongo
       auto copy = mongoc_read_prefs_copy(prefs);
       scope(exit) mongoc_read_prefs_destroy(copy);
      
-      bool result = mongoc_client_get_server_status(_client, copy, &reply, &error);
+      auto result = mongoc_client_get_server_status(_client, copy, &reply, &error);
      
       auto response = BsonObject(bson_get_data(&reply));
 

@@ -22,6 +22,8 @@ alias BsonNull      = typeof(null);
 alias BO = BsonObject;
 alias BA = BsonArray;
 
+alias size_t = object.size_t; // override the bson header's definition translated from C
+
 enum BsonExceptionCode
 {
    invalidOidFormat,

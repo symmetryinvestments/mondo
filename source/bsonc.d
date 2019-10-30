@@ -193,7 +193,6 @@ extern(C)
     const(char)* bson_bcone_magic() @nogc nothrow;
     long bson_get_monotonic_time() @nogc nothrow;
     int bson_gettimeofday(timeval*) @nogc nothrow;
-import core.sys.windows.windows;
     alias ssize_t = long;
     alias bool_ = byte;
     _bson_context_t* bson_context_new(bson_context_flags_t) @nogc nothrow;
@@ -893,11 +892,6 @@ import core.sys.windows.windows;
     static if(!is(typeof(BCON_STACK_MAX))) {
         enum BCON_STACK_MAX = 100;
     }
-    static if(!is(typeof(__GNUC_VA_LIST))) {
-        enum __GNUC_VA_LIST = 1;
-    }
-
-
 
 
 }

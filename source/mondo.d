@@ -289,7 +289,7 @@ unittest
 {
    string[] log; 
    MongoLogger.addLogger((LogLevel ll, in string logDomain, in string message) { log ~= message; });
-   mongoc_log(mongoc_log_level_t.LEVEL_ERROR, "test", "asd");
+   mongoc_log(MONGOC_LOG_LEVEL_ERROR, "test", "asd");
    assert(log.length > 0);
 }
 
@@ -635,8 +635,8 @@ class Collection
    public void insert(Range)(Range documentsRange, in InsertFlags flags = InsertFlags.NONE, in WriteConcern writeConcern = null) if (isInputRange!Range && is(ElementType!Range == BsonObject))
    {
       mixin(MongoWriteConcernMixin);
-      auto documents = documentsRange.map!((doc) => bson_from_array(doc.exportData())).array;
-      scope(exit) { foreach(document; documents) bson_destroy(document); }
+      auto documents = documentsRange.map!((doc) => cast(const(_bson_t)*)bson_from_array(doc.exportData())).array;
+      scope(exit) { foreach(document; documents) bson_destroy(cast(_bson_t*)document); }
 
       assert(documents.length < int.max, "Too many documents to insert");
       mixin(MongoWrapErrorMixin!"mongoc_collection_insert_bulk(_collection, flags, documents.ptr, cast(int)documents.length, wc, &error) == 0");
@@ -896,7 +896,7 @@ private enum MongoWriteConcernMixin       = "const mongoc_write_concern_t *wc = 
 
 private bson_t* bson_from_array(in ubyte[] data) 
 in     { assert(data.length <= int.max, "Too much data for bson"); }
-body   { return bson_new_from_data(data.ptr, data.length); }
+body   { return bson_new_from_data(data.ptr, cast(int)data.length); }
 
 private bool bson_init_from_array(bson_t* bson, in ubyte[] data) 
 in     { assert(data.length <= int.max, "Too much data for bson"); }

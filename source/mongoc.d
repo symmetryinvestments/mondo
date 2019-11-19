@@ -53,7 +53,6 @@ struct dpp {
 extern(C)
 {
     alias wchar_t = int;
-    alias size_t = c_ulong;
     int getentropy(void*, c_ulong) @nogc nothrow;
     char* crypt(const(char)*, const(char)*) @nogc nothrow;
     int fdatasync(int) @nogc nothrow;
@@ -2553,7 +2552,6 @@ extern(C)
     char* strncpy(char*, const(char)*, c_ulong) @nogc nothrow;
     char* strcpy(char*, const(char)*) @nogc nothrow;
     void* memchr(const(void)*, int, c_ulong) @nogc nothrow;
-    int memcmp(const(void)*, const(void)*, c_ulong) @nogc nothrow;
     void* memset(void*, int, c_ulong) @nogc nothrow;
     void* memccpy(void*, const(void)*, int, c_ulong) @nogc nothrow;
     void* memmove(void*, const(void)*, c_ulong) @nogc nothrow;

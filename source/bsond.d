@@ -223,7 +223,7 @@ struct BsonObject
    void  importData(in string data)
    {
          bson_error_t error;
-         bson_t *bson = bson_new_from_json(cast(ubyte*)data, (cast(ubyte[])data).length, &error);
+         bson_t *bson = bson_new_from_json(cast(ubyte*)data, cast(int)(cast(ubyte[])data).length, &error);
 
          if (bson)
          {

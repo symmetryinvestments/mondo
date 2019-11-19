@@ -53,7 +53,6 @@ struct dpp {
 extern(C)
 {
     alias wchar_t = int;
-    alias size_t = c_ulong;
     int getentropy(void*, c_ulong) @nogc nothrow;
     char* crypt(const(char)*, const(char)*) @nogc nothrow;
     int fdatasync(int) @nogc nothrow;
@@ -806,7 +805,6 @@ extern(C)
     alias u_short = ushort;
     alias u_char = ubyte;
     _bson_t* bson_new() @nogc nothrow;
-    _bson_t* bson_new_from_json(const(ubyte)*, c_long, _bson_error_t*) @nogc nothrow;
     bool bson_init_from_json(_bson_t*, const(char)*, c_long, _bson_error_t*) @nogc nothrow;
     bool bson_init_static(_bson_t*, const(ubyte)*, c_ulong) @nogc nothrow;
     void bson_init(_bson_t*) @nogc nothrow;
